@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 '''
 DISTRIBUTION STATEMENT A. Approved for public release: distribution unlimited.
@@ -368,7 +368,7 @@ class CloudAgentHTTPServer(ThreadingMixIn, HTTPServer):
         if os.path.isfile(keyname):
             # read in private key
             logger.debug( "Using existing key in %s"%keyname)
-            f = open(keyname,"r")
+            f = open(keyname,"rb")
             rsa_key = crypto.rsa_import_privkey(f.read())
         else:
             logger.debug("key not found, generating a new one")
@@ -595,7 +595,7 @@ def main(argv=sys.argv):
                 try:
                     module = importlib.import_module(action)
                     execute = getattr(module,'execute')
-                    asyncio.run(execute(revocation))
+                    asyncio.get_event_loop().run_until_complete(execute(revocation))
                 except Exception as e:
                     logger.warn("Exception during execution of revocation action %s: %s"%(action,e))
         try:

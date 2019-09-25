@@ -25,6 +25,8 @@ import subprocess
 import socket
 import time
 import requests
+import shutil
+import sys
 
 try:
     import simplejson as json
@@ -49,7 +51,7 @@ cfsslproc = None
 def post_cfssl(params,data):
     numtries = 0
     maxr = 10
-    retry=0.05
+    retry=0.2
     while True:
         try:
             response = requests.post("http://%s:%s/%s"%(cfssl_ip, cfssl_port,params), json=data, timeout=1)
@@ -68,6 +70,9 @@ def post_cfssl(params,data):
     return response.json()
 
 def start_cfssl(cmdline=""):
+    if shutil.which("cfssl") is None:
+        logger.error("cfssl binary not found in the path.  Please install cfssl or change the setting \"ca_implementation\" in keylime.conf")
+        sys.exit(1)
     global cfsslproc
     cmd = "cfssl serve -loglevel=1 %s "%cmdline
     env = os.environ.copy()
