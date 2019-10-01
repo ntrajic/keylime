@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 '''
 DISTRIBUTION STATEMENT A. Approved for public release: distribution unlimited.
@@ -245,9 +245,8 @@ class Handler(BaseHTTPRequestHandler):
 
         dec_payload = None
         enc_payload = None
-
         if self.server.payload is not None:
-            dec_payload = crypto.decrypt(self.server.payload, self.server.K)
+            dec_payload = crypto.decrypt(self.server.payload, bytes(self.server.K))
 
             enc_payload = self.server.payload
         elif os.path.exists(enc_path):
