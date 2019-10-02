@@ -69,11 +69,11 @@ if [[ -n "$(command -v dnf)" ]]; then
     GOPKG="golang"
     # if fedora 30 or greater, then using TPM2 tool packages
     if [[ -f "/etc/fedora-release" && $(cat /etc/fedora-release | awk '{print $3}') -gt 29 ]] ; then
-    	TPM2_TOOLS_PKGS="tpm2-tools tpm2-tss tpm2-abrmd"
-    	NEED_BUILD_TOOLS=0
-    	HAS_GO_PKG=1
+        TPM2_TOOLS_PKGS="tpm2-tools tpm2-tss tpm2-abrmd"
+        NEED_BUILD_TOOLS=0
+        HAS_GO_PKG=1
     else
-    	NEED_BUILD_TOOLS=1
+        NEED_BUILD_TOOLS=1
     fi
 elif [[ -n "$(command -v yum)" ]]; then
     PACKAGE_MGR=$(command -v yum)
@@ -156,7 +156,7 @@ if [[ $? > 0 ]] ; then
     exit 1
 fi
 if [[ ! -z $PYTHON_PIPS ]] ; then
-	pip3 install $PYTHON_PIPS
+    pip3 install $PYTHON_PIPS
 fi
 
 
@@ -258,11 +258,11 @@ if [[ "$OPENSSL" -eq "0" ]] ; then
     fi
     
     if [[ "$HAS_GO_PKG" -eq "1" ]] ; then
-    	$PACKAGE_MGR install -y $GOPKG
-		if [[ $? > 0 ]] ; then
-		    echo "ERROR: Package(s) failed to install properly!"
-		    exit 1
-		fi
+        $PACKAGE_MGR install -y $GOPKG
+        if [[ $? > 0 ]] ; then
+            echo "ERROR: Package(s) failed to install properly!"
+            exit 1
+        fi
     fi
 
     if [[ ! `command -v go` ]] ; then
@@ -329,10 +329,10 @@ if [[ "$OPENSSL" -eq "0" ]] ; then
         echo "Do you want to setup a default GOPATH with the following:"
         echo " mkdir -p $HOME/go && echo 'export GOPATH=$HOME/go' >> $HOME/.bashrc && source $HOME/.bashrc"
         read -r -p "Proceed? [y/N] " resp
-    	case "$resp" in
-        	[yY]) mkdir -p $HOME/go && echo 'export GOPATH=$HOME/go' >> $HOME/.bashrc && source $HOME/.bashrc ;;
-        	*) exit 1 ;;
-    	esac
+        case "$resp" in
+            [yY]) mkdir -p $HOME/go && echo 'export GOPATH=$HOME/go' >> $HOME/.bashrc && source $HOME/.bashrc ;;
+            *) exit 1 ;;
+        esac
     fi
 
     # Ensure Go installed meets min requirements
@@ -359,21 +359,21 @@ fi
 
 # Prepare to build TPM libraries
 if [[ "$NEED_BUILD_TOOLS" -eq "1" ]] ; then
-	echo
-	echo "=================================================================================="
-	echo $'\t\t\tInstalling TPM libraries and build tools'
-	echo "=================================================================================="
-	# Create temp dir for building tpm
-	TMPDIR=`mktemp -d` || exit 1
-	echo "INFO: Using temp tpm directory: $TMPDIR"
-	
-	$PACKAGE_MGR -y install $BUILD_TOOLS
-	if [[ $? > 0 ]] ; then
-	    echo "ERROR: Package(s) failed to install properly!"
-	    exit 1
-	fi
-	mkdir -p $TMPDIR/tpm
-	cd $TMPDIR/tpm
+    echo
+    echo "=================================================================================="
+    echo $'\t\t\tInstalling TPM libraries and build tools'
+    echo "=================================================================================="
+    # Create temp dir for building tpm
+    TMPDIR=`mktemp -d` || exit 1
+    echo "INFO: Using temp tpm directory: $TMPDIR"
+    
+    $PACKAGE_MGR -y install $BUILD_TOOLS
+    if [[ $? > 0 ]] ; then
+        echo "ERROR: Package(s) failed to install properly!"
+        exit 1
+    fi
+    mkdir -p $TMPDIR/tpm
+    cd $TMPDIR/tpm
 fi
 
 if [[ "$TPM_VERSION" -eq "1" ]] ; then
@@ -401,81 +401,81 @@ if [[ "$TPM_VERSION" -eq "1" ]] ; then
     make install
     popd # tpm/tpm4720-keylime
 elif [[ "$TPM_VERSION" -eq "2" ]] ; then
-	if [[ ! -z $TPM2_TOOLS_PKGS ]] ; then
-		echo
-	    echo "=================================================================================="
-	    echo $'\t\t\t\tInstall tpm2-tools packages'
-	    echo "=================================================================================="
-	    $PACKAGE_MGR install -y $TPM2_TOOLS_PKGS
-	    if [[ $? > 0 ]] ; then
-    		echo "ERROR: Package(s) failed to install properly!"
-    		exit 1
-		fi
-	else
-	    echo
-	    echo "=================================================================================="
-	    echo $'\t\t\t\tBuild and install tpm2-tss'
-	    echo "=================================================================================="
-	    git clone $TPM2TSS_GIT tpm2-tss
-	    pushd tpm2-tss
-	    git checkout $TPM2TSS_VER
-	    ./bootstrap
-	    ./configure --prefix=/usr $CENTOS_TSS_FLAGS
-	    make
-	    make install
-	    popd # tpm
-	    
-#	    if [[ ! -f /usr/lib/libtss.so ]] ; then
-#	    	echo "ERROR: tpm2-tss failed to build and install properly!"
-#    		exit 1
-#    	fi
-	
-	    # Example installation instructions for using the tpm2-abrmd resource
-	    # manager for Ubuntu 18 LTS. The tools and Keylime could run without this
-	    # by directly communicating with the TPM (though not recommended) by setting:
-	    # for swtpm2 emulator:
-	    #   export TPM2TOOLS_TCTI="mssim:port=2321"
-	    # for chardev communication:
-	    #   export TPM2TOOLS_TCTI="device:/dev/tpm0"
-	    #
-	    # sudo useradd --system --user-group tss
-	    # git clone https://github.com/tpm2-software/tpm2-abrmd.git tpm2-abrmd
-	    # pushd tpm2-abrmd
-	    # ./bootstrap
-	    # ./configure --with-dbuspolicydir=/etc/dbus-1/system.d \
-	    #             --with-systemdsystemunitdir=/lib/systemd/system \
-	    #             --with-systemdpresetdir=/lib/systemd/system-preset \
-	    #             --datarootdir=/usr/share
-	    # make
-	    # sudo make install
-	    # sudo ldconfig
-	    # sudo pkill -HUP dbus-daemon
-	    # sudo systemctl daemon-reload
-	    # sudo service tpm2-abrmd start
-	    # export TPM2TOOLS_TCTI="tabrmd:bus_name=com.intel.tss2.Tabrmd"
-	    #
-	    # NOTE: if using swtpm2 emulator, you need to run the tpm2-abrmd service as:
-	    # sudo -u tss /usr/local/sbin/tpm2-abrmd --tcti=mssim &
-	
-	    echo
-	    echo "=================================================================================="
-	    echo $'\t\t\t\tBuild and install tpm2-tools'
-	    echo "=================================================================================="
-	    git clone $TPM2TOOLS_GIT tpm2-tools
-	    pushd tpm2-tools
-	    git checkout $TPM2TOOLS_VER
-	    ./bootstrap
-	    ./configure --prefix=/usr/local
-	    make
-	    make install
-	    popd # tpm
-	fi
-	
-	if [[ -z "$(command -v tpm2_getrandom)" ]] ; then
-	    echo "ERROR: Failed to build tpm2_tss/tools!"
+    if [[ ! -z $TPM2_TOOLS_PKGS ]] ; then
+        echo
+        echo "=================================================================================="
+        echo $'\t\t\t\tInstall tpm2-tools packages'
+        echo "=================================================================================="
+        $PACKAGE_MGR install -y $TPM2_TOOLS_PKGS
+        if [[ $? > 0 ]] ; then
+            echo "ERROR: Package(s) failed to install properly!"
+            exit 1
+        fi
+    else
+        echo
+        echo "=================================================================================="
+        echo $'\t\t\t\tBuild and install tpm2-tss'
+        echo "=================================================================================="
+        git clone $TPM2TSS_GIT tpm2-tss
+        pushd tpm2-tss
+        git checkout $TPM2TSS_VER
+        ./bootstrap
+        ./configure --prefix=/usr $CENTOS_TSS_FLAGS
+        make
+        make install
+        popd # tpm
+        
+#        if [[ ! -f /usr/lib/libtss.so ]] ; then
+#            echo "ERROR: tpm2-tss failed to build and install properly!"
+#            exit 1
+#        fi
+    
+        # Example installation instructions for using the tpm2-abrmd resource
+        # manager for Ubuntu 18 LTS. The tools and Keylime could run without this
+        # by directly communicating with the TPM (though not recommended) by setting:
+        # for swtpm2 emulator:
+        #   export TPM2TOOLS_TCTI="mssim:port=2321"
+        # for chardev communication:
+        #   export TPM2TOOLS_TCTI="device:/dev/tpm0"
+        #
+        # sudo useradd --system --user-group tss
+        # git clone https://github.com/tpm2-software/tpm2-abrmd.git tpm2-abrmd
+        # pushd tpm2-abrmd
+        # ./bootstrap
+        # ./configure --with-dbuspolicydir=/etc/dbus-1/system.d \
+        #             --with-systemdsystemunitdir=/lib/systemd/system \
+        #             --with-systemdpresetdir=/lib/systemd/system-preset \
+        #             --datarootdir=/usr/share
+        # make
+        # sudo make install
+        # sudo ldconfig
+        # sudo pkill -HUP dbus-daemon
+        # sudo systemctl daemon-reload
+        # sudo service tpm2-abrmd start
+        # export TPM2TOOLS_TCTI="tabrmd:bus_name=com.intel.tss2.Tabrmd"
+        #
+        # NOTE: if using swtpm2 emulator, you need to run the tpm2-abrmd service as:
+        # sudo -u tss /usr/local/sbin/tpm2-abrmd --tcti=mssim &
+    
+        echo
+        echo "=================================================================================="
+        echo $'\t\t\t\tBuild and install tpm2-tools'
+        echo "=================================================================================="
+        git clone $TPM2TOOLS_GIT tpm2-tools
+        pushd tpm2-tools
+        git checkout $TPM2TOOLS_VER
+        ./bootstrap
+        ./configure --prefix=/usr/local
+        make
+        make install
+        popd # tpm
+    fi
+    
+    if [[ -z "$(command -v tpm2_getrandom)" ]] ; then
+        echo "ERROR: Failed to build tpm2_tss/tools!"
         exit 1
     fi
-	
+    
     if [[ "$TPM_SOCKET" -eq "1" ]] ; then
         echo
         echo "=================================================================================="
@@ -565,22 +565,22 @@ if [[ "$TPM_SOCKET" -eq "1" ]] ; then
     # starts emulator and IMA stub at boot
     cd $KEYLIME_DIR/ima_stub_service
     ./installer.sh
-	if [[ -n "$(command -v service)" ]] ; then
-		service tpm_emulator restart
-	fi
-	if [[ "$TPM_VERSION" -eq "2" ]] ; then
-		echo 'export TPM2TOOLS_TCTI="mssim:port=2321"' >> $HOME/.bashrc && source $HOME/.bashrc
-	    echo "=================================================================================="
-	    echo $'\tWARNING: You need to set the var TPM2TOOLS_TCTI="mssim:port=2321"'
-	    echo $'\tWARNING: Use this to set it in your current shell: source ~/.bashrc'
-	    echo "=================================================================================="
-	fi
+    if [[ -n "$(command -v service)" ]] ; then
+        service tpm_emulator restart
+    fi
+    if [[ "$TPM_VERSION" -eq "2" ]] ; then
+        echo 'export TPM2TOOLS_TCTI="mssim:port=2321"' >> $HOME/.bashrc && source $HOME/.bashrc
+        echo "=================================================================================="
+        echo $'\tWARNING: You need to set the var TPM2TOOLS_TCTI="mssim:port=2321"'
+        echo $'\tWARNING: Use this to set it in your current shell: source ~/.bashrc'
+        echo "=================================================================================="
+    fi
 else
-	# this just warns, and doesn't set the env var because they might be using abrmd
-	if [[ "$TPM_VERSION" -eq "2" ]] ; then
-	    echo "=================================================================================="
-	    echo $'\tWARNING: If not using abrmd, you need to set the var:'
-	    echo $'\tTPM2TOOLS_TCTI=="device:/dev/tpm0"'
-	    echo "=================================================================================="
-	fi
+    # this just warns, and doesn't set the env var because they might be using abrmd
+    if [[ "$TPM_VERSION" -eq "2" ]] ; then
+        echo "=================================================================================="
+        echo $'\tWARNING: If not using abrmd, you need to set the var:'
+        echo $'\tTPM2TOOLS_TCTI=="device:/dev/tpm0"'
+        echo "=================================================================================="
+    fi
 fi
