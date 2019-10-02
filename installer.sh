@@ -98,7 +98,7 @@ case "$ID" in
                 PACKAGE_MGR=$(command -v dnf)
                 $PACKAGE_MGR -y install epel-release
                 PYTHON_PREIN="python3 python3-devel python3-setuptools python3-pip"
-                PYTHON_DEPS="gcc gcc-c++ openssl-devel python3-yaml python3-requests swig python3-cryptography"
+                PYTHON_DEPS="gcc gcc-c++ openssl-devel python3-yaml python3-requests swig python3-cryptography wget git"
                 PYTHON_PIPS="tornado==5.0.2 pyzmq m2crypto simplejson"
                 BUILD_TOOLS="git wget patch libyaml openssl-devel libtool make automake m4 libgcrypt-devel autoconf libcurl-devel libstdc++-devel dbus-devel"
                 TPM2_TOOLS_PKGS="tpm2-tss tpm2-tools tpm2-abrmd"
