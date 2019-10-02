@@ -453,6 +453,7 @@ elif [[ "$TPM_VERSION" -eq "2" ]] ; then
         ./configure --prefix=/usr $CENTOS7_TSS_FLAGS
         make
         make install
+        ldconfig
         popd # tpm
         
 #        if [[ ! -f /usr/lib/libtss.so ]] ; then
@@ -495,6 +496,10 @@ elif [[ "$TPM_VERSION" -eq "2" ]] ; then
         pushd tpm2-tools
         git checkout $TPM2TOOLS_VER
         ./bootstrap
+        if [[ -n $CENTOS7_TSS_FLAGS ]] ; then
+            export SAPI_CFLAGS=' '
+            export SAPI_LIBS='-ltss2-sys -L/usr/lib/'
+        fi
         ./configure --prefix=/usr/local
         make
         make install
