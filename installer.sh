@@ -59,44 +59,78 @@ confirm_force_install () {
     esac
 }
 
-NEED_BUILD_TOOLS=0
-# Which package management system are we using?
-if [[ -n "$(command -v dnf)" ]]; then
-    PACKAGE_MGR=$(command -v dnf)
-    PYTHON_PREIN="python3 python3-devel python3-setuptools git wget patch"
-    PYTHON_DEPS="python3-pip gcc gcc-c++ openssl-devel swig python3-pyyaml python3-m2crypto  python3-zmq python3-cryptography python3-tornado python3-simplejson python3-requests yaml-cpp-devel procps-ng"
-    BUILD_TOOLS="openssl-devel libtool make automake pkg-config m4 libgcrypt-devel autoconf autoconf-archive libcurl-devel libstdc++-devel uriparser-devel dbus-devel gnulib-devel doxygen"
-    GOPKG="golang"
-    # if fedora 30 or greater, then using TPM2 tool packages
-    if [[ -f "/etc/fedora-release" && $(cat /etc/fedora-release | awk '{print $3}') -gt 29 ]] ; then
-        TPM2_TOOLS_PKGS="tpm2-tools tpm2-tss tpm2-abrmd"
-        NEED_BUILD_TOOLS=0
-        HAS_GO_PKG=1
+# Determine distibution (using systemd standard `os-release`):
+if [ -f /etc/os-release ]; then
+        . /etc/os-release
     else
-        NEED_BUILD_TOOLS=1
-    fi
-elif [[ -n "$(command -v yum)" ]]; then
-    PACKAGE_MGR=$(command -v yum)
-    $PACKAGE_MGR -y install epel-release
-    PYTHON_PREIN="python36 python36-devel python36-setuptools python36-pip git wget patch openssl"
-    PYTHON_DEPS="gcc gcc-c++ openssl-devel swig python36-PyYAML python36-tornado python36-simplejson python36-cryptography python36-requests python36-zmq yaml-cpp-devel"
-    PYTHON_PIPS="m2crypto"
-    BUILD_TOOLS="openssl-devel file libtool make automake m4 libgcrypt-devel autoconf autoconf-archive libcurl-devel libstdc++-devel uriparser-devel dbus-devel gnulib-devel doxygen"
-    NEED_BUILD_TOOLS=1
-    CENTOS_TSS_FLAGS="--enable-esapi=no --disable-doxygen-doc"
-elif [[ -n "$(command -v apt-get)" ]]; then
-    PACKAGE_MGR=$(command -v apt-get)
-    PYTHON_PREIN="git patch"
-    PYTHON_DEPS="python3 python3-pip python3-dev python3-setuptools python3-zmq python3-tornado python3-cryptography python3-simplejson python3-requests gcc g++ libssl-dev swig python3-yaml wget"
-    PYTHON_PIPS="m2crypto"
-    BUILD_TOOLS="build-essential libtool automake pkg-config m4 libgcrypt20-dev uthash-dev autoconf autoconf-archive libcurl4-gnutls-dev gnulib doxygen libdbus-1-dev"
-    NEED_BUILD_TOOLS=1
-    $PACKAGE_MGR update
-else
-   echo "No recognized package manager found on this system!" 1>&2
-   exit 1
+        echo "Not able to determine your OS or Distribution"
+        exit 1
 fi
 
+NEED_BUILD_TOOLS=0
+case "$ID" in
+    debian | ubuntu)
+        echo "${ID} selected."
+        PACKAGE_MGR=$(command -v apt-get)
+        PYTHON_PREIN="git patch"
+        PYTHON_DEPS="python3 python3-pip python3-dev python3-setuptools python3-zmq python3-tornado python3-cryptography python3-simplejson python3-requests gcc g++ libssl-dev swig python3-yaml wget"
+        PYTHON_PIPS="m2crypto"
+        BUILD_TOOLS="build-essential libtool automake pkg-config m4 libgcrypt20-dev uthash-dev autoconf autoconf-archive libcurl4-gnutls-dev gnulib doxygen libdbus-1-dev"
+        NEED_BUILD_TOOLS=1
+        $PACKAGE_MGR update
+    ;;
+
+    rhel | centos)
+        case "${VERSION_ID}" in 
+            7)
+                echo "${ID} ${VERSION_ID} selected."
+                PACKAGE_MGR=$(command -v yum)
+                $PACKAGE_MGR -y install epel-release
+                PYTHON_PREIN="python36 python36-devel python36-setuptools python36-pip git wget patch openssl"
+                PYTHON_DEPS="gcc gcc-c++ openssl-devel swig python36-PyYAML python36-tornado python36-simplejson python36-cryptography python36-requests python36-zmq yaml-cpp-devel"
+                PYTHON_PIPS="m2crypto"
+                BUILD_TOOLS="openssl-devel file libtool make automake m4 libgcrypt-devel autoconf autoconf-archive libcurl-devel libstdc++-devel uriparser-devel dbus-devel gnulib-devel doxygen"
+                NEED_BUILD_TOOLS=1
+                CENTOS7_TSS_FLAGS="--enable-esapi=no --disable-doxygen-doc"
+            ;;
+            8)
+                echo "${ID} ${VERSION_ID} selected."
+                PACKAGE_MGR=$(command -v dnf)
+                $PACKAGE_MGR -y install epel-release
+                PYTHON_PREIN="python3 python3-devel python3-setuptools python3-pip"
+                PYTHON_DEPS="gcc gcc-c++ openssl-devel python3-yaml python3-requests swig python3-cryptography"
+                PYTHON_PIPS="tornado==5.0.2 pyzmq m2crypto simplejson"
+                BUILD_TOOLS="git wget patch libyaml openssl-devel libtool make automake m4 libgcrypt-devel autoconf libcurl-devel libstdc++-devel dbus-devel"
+                TPM2_TOOLS_PKGS="tpm2-tss tpm2-tools tpm2-abrmd"
+                NEED_PYTHON_DIR=1
+            ;;
+            *)
+                echo "Version ${VERSION_ID} of ${ID} not supported"
+                exit 1
+        esac
+    ;;
+
+    fedora)
+        echo "${ID} selected."       
+        PACKAGE_MGR=$(command -v dnf)
+        PYTHON_PREIN="python3 python3-devel python3-setuptools git wget patch"
+        PYTHON_DEPS="python3-pip gcc gcc-c++ openssl-devel swig python3-pyyaml python3-m2crypto  python3-zmq python3-cryptography python3-tornado python3-simplejson python3-requests yaml-cpp-devel procps-ng"
+        BUILD_TOOLS="openssl-devel libtool make automake pkg-config m4 libgcrypt-devel autoconf autoconf-archive libcurl-devel libstdc++-devel uriparser-devel dbus-devel gnulib-devel doxygen"
+        GOPKG="golang"
+        if [[ ${VERSION_ID} -ge 30 ]] ; then
+        # if fedora 30 or greater, then using TPM2 tool packages
+            TPM2_TOOLS_PKGS="tpm2-tools tpm2-tss tpm2-abrmd"
+            NEED_BUILD_TOOLS=0
+            HAS_GO_PKG=1
+        else
+            NEED_BUILD_TOOLS=1
+        fi
+    ;;
+
+    *)
+        echo "${ID} is not currently supported."
+        exit 1
+esac
 
 # Command line params
 STUB=0
@@ -249,8 +283,7 @@ if [[ "$OPENSSL" -eq "0" ]] ; then
     echo $'\t\t\tSwitching config to cfssl'
     echo "=================================================================================="
     cd $KEYLIME_DIR
-    patch --forward --verbose -s -p1 < $KEYLIME_DIR/patches/cfsslconf-patch.txt \
-        && echo "INFO: Keylime config patched!"
+    sed -i 's/ca_implementation = openssl/ca_implementation = cfssl/' keylime.conf
 
     # Pull in correct PATH under sudo (mainly for secure_path)
     if [[ -r "/etc/profile.d/go.sh" ]]; then
@@ -411,6 +444,8 @@ elif [[ "$TPM_VERSION" -eq "2" ]] ; then
             echo "ERROR: Package(s) failed to install properly!"
             exit 1
         fi
+        systemctl enable tpm2-abrmd
+        systemctl start tpm2-abrmd
     else
         echo
         echo "=================================================================================="
@@ -420,7 +455,10 @@ elif [[ "$TPM_VERSION" -eq "2" ]] ; then
         pushd tpm2-tss
         git checkout $TPM2TSS_VER
         ./bootstrap
-        ./configure --prefix=/usr $CENTOS_TSS_FLAGS
+        if [[ -n $CENTOS7_TSS_FLAGS ]] ; then
+            export PKG_CONFIG_PATH=/usr/lib/pkgconfig/
+        fi
+        ./configure --prefix=/usr $CENTOS7_TSS_FLAGS
         make
         make install
         popd # tpm
@@ -503,6 +541,9 @@ elif [[ "$TPM_VERSION" -eq "2" ]] ; then
         install -c tpm_server /usr/local/bin/tpm_server
 
         popd # tpm/swtpm2
+        sed -i 's/.*ExecStart.*/ExecStart=\/usr\/sbin\/tpm2-abrmd --tcti=mssim/' /usr/lib/systemd/system/tpm2-abrmd.service
+        systemctl daemon-reload
+        systemctl restart tpm2-abrmd
     fi
 else
     echo "ERROR: Invalid TPM version chosen: '$TPM_VERSION'"
@@ -530,6 +571,9 @@ echo "==========================================================================
 echo $'\t\t\t\tInstall Keylime'
 echo "=================================================================================="
 cd $KEYLIME_DIR
+if [[ -n "${NEED_PYTHON_DIR}" ]] ; then
+    mkdir -p /usr/local/lib/python3.6/site-packages/
+fi
 python3 setup.py install
 
 if [[ -f "/etc/keylime.conf" ]] ; then
@@ -540,6 +584,14 @@ if [[ -f "/etc/keylime.conf" ]] ; then
 else
     echo "Installing keylime.conf to /etc/"
     cp -n keylime.conf /etc/
+fi
+
+if [[ "$OPENSSL" -eq "0" ]] ; then
+    echo
+    echo "=================================================================================="
+    echo $'\t\t\tSwitching config to cfssl'
+    echo "=================================================================================="
+    sed -i 's/ca_implementation = openssl/ca_implementation = cfssl/' /etc/keylime.conf
 fi
 
 # Run agent packager (tarball)
@@ -575,6 +627,8 @@ if [[ "$TPM_SOCKET" -eq "1" ]] ; then
         echo $'\tWARNING: Use this to set it in your current shell: source ~/.bashrc'
         echo "=================================================================================="
     fi
+    # disable ek cert checking
+    sed -i 's/require_ek_cert = True/require_ek_cert = False/' /etc/keylime.conf
 else
     # this just warns, and doesn't set the env var because they might be using abrmd
     if [[ "$TPM_VERSION" -eq "2" ]] ; then
