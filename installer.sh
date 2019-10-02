@@ -277,14 +277,6 @@ echo "INFO: Using Keylime directory: $KEYLIME_DIR"
 
 # OpenSSL or cfssl?
 if [[ "$OPENSSL" -eq "0" ]] ; then
-    # Patch config file to use cfssl
-    echo
-    echo "=================================================================================="
-    echo $'\t\t\tSwitching config to cfssl'
-    echo "=================================================================================="
-    cd $KEYLIME_DIR
-    sed -i 's/ca_implementation = openssl/ca_implementation = cfssl/' keylime.conf
-
     # Pull in correct PATH under sudo (mainly for secure_path)
     if [[ -r "/etc/profile.d/go.sh" ]]; then
         source "/etc/profile.d/go.sh"
