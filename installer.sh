@@ -618,10 +618,9 @@ if [[ "$TPM_SOCKET" -eq "1" ]] ; then
         service tpm_emulator restart
     fi
     if [[ "$TPM_VERSION" -eq "2" ]] ; then
-        echo 'export TPM2TOOLS_TCTI="mssim:port=2321"' >> $HOME/.bashrc && source $HOME/.bashrc
         echo "=================================================================================="
-        echo $'\tWARNING: You need to set the var TPM2TOOLS_TCTI="mssim:port=2321"'
-        echo $'\tWARNING: Use this to set it in your current shell: source ~/.bashrc'
+        echo $'\tWARNING: If not using abrmd you need to set the var:'
+        echo $'\tTPM2TOOLS_TCTI="mssim:port=2321"'
         echo "=================================================================================="
     fi
     # disable ek cert checking
