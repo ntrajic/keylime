@@ -79,8 +79,8 @@ elif [[ -n "$(command -v yum)" ]]; then
     PACKAGE_MGR=$(command -v yum)
     $PACKAGE_MGR -y install epel-release
     PYTHON_PREIN="python36 python36-devel python36-setuptools python36-pip git wget patch openssl"
-    PYTHON_DEPS="gcc gcc-c++ openssl-devel swig python36-PyYAML python36-tornado python36-simplejson python36-requests yaml-cpp-devel"
-    PYTHON_PIPS="tornado pyzmq m2crypto cryptography"
+    PYTHON_DEPS="gcc gcc-c++ openssl-devel swig python36-PyYAML python36-tornado python36-simplejson python36-cryptography python36-requests python36-zmq yaml-cpp-devel"
+    PYTHON_PIPS="m2crypto"
     BUILD_TOOLS="openssl-devel file libtool make automake m4 libgcrypt-devel autoconf autoconf-archive libcurl-devel libstdc++-devel uriparser-devel dbus-devel gnulib-devel doxygen"
     NEED_BUILD_TOOLS=1
     CENTOS_TSS_FLAGS="--enable-esapi=no --disable-doxygen-doc"
