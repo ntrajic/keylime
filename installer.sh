@@ -43,6 +43,15 @@ MIN_PYZMQ_VERSION="14.4"
 MIN_PYCRYPTOGRAPHY_VERSION="2.1.4"
 MIN_GO_VERSION="1.8.4"
 
+# default variables
+CENTOS7_TSS_FLAGS=
+GOPKG=
+NEED_BUILD_TOOLS=0
+NEED_PYTHON_DIR=
+PYTHON_PIPS=
+TPM2_TOOLS_PKGS=
+NEED_EPEL=0
+
 
 # Check to ensure version is at least minversion
 version_checker () {
@@ -67,7 +76,6 @@ if [ -f /etc/os-release ]; then
         exit 1
 fi
 
-NEED_BUILD_TOOLS=0
 case "$ID" in
     debian | ubuntu)
         echo "${ID} selected."
@@ -85,7 +93,7 @@ case "$ID" in
             7)
                 echo "${ID} ${VERSION_ID} selected."
                 PACKAGE_MGR=$(command -v yum)
-                $PACKAGE_MGR -y install epel-release
+                NEED_EPEL=1
                 PYTHON_PREIN="python36 python36-devel python36-setuptools python36-pip git wget patch openssl"
                 PYTHON_DEPS="gcc gcc-c++ openssl-devel swig python36-PyYAML python36-tornado python36-simplejson python36-cryptography python36-requests python36-zmq yaml-cpp-devel"
                 PYTHON_PIPS="m2crypto"
@@ -179,6 +187,14 @@ echo
 echo "=================================================================================="
 echo $'\t\t\tInstalling python & crypto libs'
 echo "=================================================================================="
+if [[ "$NEED_EPEL" -eq "1" ]] ; then
+	$PACKAGE_MGR -y install epel-release
+	if [[ $? > 0 ]] ; then
+    	echo "ERROR: EPEL package failed to install properly!"
+    	exit 1
+	fi
+fi
+
 $PACKAGE_MGR install -y $PYTHON_PREIN
 if [[ $? > 0 ]] ; then
     echo "ERROR: Package(s) failed to install properly!"
