@@ -30,7 +30,7 @@ TPM2TOOLS_GIT=https://github.com/tpm2-software/tpm2-tools.git
 TPM2SIM_SRC=http://sourceforge.net/projects/ibmswtpm2/files/ibmtpm1119.tar.gz/download
 KEYLIME_VER="master"
 TPM4720_VER="master"
-GOLANG_VER="1.12.4"
+GOLANG_VER="1.13.1"
 TPM2TSS_VER="2.0.x"
 TPM2TOOLS_VER="3.X"
 
@@ -41,7 +41,7 @@ MIN_PYTORNADO_VERSION="4.3"
 MIN_PYM2CRYPTO_VERSION="0.21.1"
 MIN_PYZMQ_VERSION="14.4"
 MIN_PYCRYPTOGRAPHY_VERSION="2.1.4"
-MIN_GO_VERSION="1.8.4"
+MIN_GO_VERSION="1.11.13"
 
 # default variables
 CENTOS7_TSS_FLAGS=
