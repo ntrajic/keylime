@@ -51,7 +51,7 @@ NEED_PYTHON_DIR=0
 PYTHON_PIPS=
 TPM2_TOOLS_PKGS=
 NEED_EPEL=0
-
+POWERTOOLS=
 
 # Check to ensure version is at least minversion
 version_checker () {
@@ -109,8 +109,10 @@ case "$ID" in
                 PYTHON_DEPS="gcc gcc-c++ openssl-devel python3-yaml python3-requests swig python3-cryptography wget git"
                 PYTHON_PIPS="tornado==5.0.2 pyzmq m2crypto simplejson"
                 BUILD_TOOLS="git wget patch libyaml openssl-devel libtool make automake m4 libgcrypt-devel autoconf libcurl-devel libstdc++-devel dbus-devel"
-                TPM2_TOOLS_PKGS="tpm2-tss tpm2-tools tpm2-abrmd"
+                #TPM2_TOOLS_PKGS="tpm2-tss tpm2-tools tpm2-abrmd" TODO: still on 3.1.1 tpm2_tools 
+                NEED_BUILD_TOOLS=1
                 NEED_PYTHON_DIR=1
+                POWERTOOLS="--enablerepo=PowerTools install autoconf-archive"
             ;;
             *)
                 echo "Version ${VERSION_ID} of ${ID} not supported"
@@ -413,6 +415,15 @@ if [[ "$NEED_BUILD_TOOLS" -eq "1" ]] ; then
         echo "ERROR: Package(s) failed to install properly!"
         exit 1
     fi
+    
+    if [[ -n "${POWERTOOLS}" ]] ; then
+    	$PACKAGE_MGR -y $POWERTOOLS
+    	if [[ $? > 0 ]] ; then
+        	echo "ERROR: Package(s) failed to install properly!"
+        	exit 1
+    	fi
+    fi
+    
     mkdir -p $TMPDIR/tpm
     cd $TMPDIR/tpm
 fi
