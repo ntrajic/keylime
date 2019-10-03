@@ -47,7 +47,7 @@ MIN_GO_VERSION="1.8.4"
 CENTOS7_TSS_FLAGS=
 GOPKG=
 NEED_BUILD_TOOLS=0
-NEED_PYTHON_DIR=
+NEED_PYTHON_DIR=0
 PYTHON_PIPS=
 TPM2_TOOLS_PKGS=
 NEED_EPEL=0
@@ -104,7 +104,7 @@ case "$ID" in
             8)
                 echo "${ID} ${VERSION_ID} selected."
                 PACKAGE_MGR=$(command -v dnf)
-                $PACKAGE_MGR -y install epel-release
+                NEED_EPEL=1
                 PYTHON_PREIN="python3 python3-devel python3-setuptools python3-pip"
                 PYTHON_DEPS="gcc gcc-c++ openssl-devel python3-yaml python3-requests swig python3-cryptography wget git"
                 PYTHON_PIPS="tornado==5.0.2 pyzmq m2crypto simplejson"
@@ -584,7 +584,7 @@ echo "==========================================================================
 echo $'\t\t\t\tInstall Keylime'
 echo "=================================================================================="
 cd $KEYLIME_DIR
-if [[ -n "${NEED_PYTHON_DIR}" ]] ; then
+if [[ "$NEED_PYTHON_DIR" -eq "1" ]] ; then
     mkdir -p /usr/local/lib/python3.6/site-packages/
 fi
 python3 setup.py install
